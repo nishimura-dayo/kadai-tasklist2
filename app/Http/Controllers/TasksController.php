@@ -50,6 +50,11 @@ class TasksController extends Controller
     // post でtasks/にアクセスされた場合の「新規登録処理」
     public function store(Request $request)
     {
+        // バリデーション
+        $request->validate([
+            'content' => 'required|max:255',
+        ]);
+
         // タスクを作成
         $task = new Task;
         $task->content = $request->content;
