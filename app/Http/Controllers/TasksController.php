@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 
 use App\Task;
 
+use App;
+
 class TasksController extends Controller
 {
     /**
@@ -16,17 +18,27 @@ class TasksController extends Controller
     // getでtasks/にアクセスされた場合の「一覧表示処理」
     public function index()
     {
+        $data = [];
         if (\Auth::check()) { //認証済みの場合
-            // タスク一覧を取得
-            $tasks = Task::all();
+    
+            // 認証済みユーザを取得
+            $user = \Auth::user();
+            // ユーザの投稿の一覧を作成日時の降順で取得
+            $tasks = $user->tasks()->orderBy('created_at', 'desc')->paginate(25);
+            
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+            ];
             
             // タスク一覧ビューでそれを表示
             return view('tasks.index', [
                 'tasks' => $tasks,
             ]);
+        } else {
+            // Welcomeビューを表示
+            return view('welcome');
         }
-        // Welcomeビューを表示
-        return view('welcome');
     }
 
     /**
@@ -51,20 +63,20 @@ class TasksController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    // post でtasks/にアクセスされた場合の「新規登録処理」
+    // postでtasks/にアクセスされた場合の「新規登録処理」
     public function store(Request $request)
     {
         // バリデーション
         $request->validate([
-            'status' => 'required|max:255',
             'content' => 'required|max:255',
+            'status' => 'required|max:10',
         ]);
 
-        // タスクを作成
-        $task = new Task;
-        $task->status = $request->status;
-        $task->content = $request->content;
-        $task->save();
+        // 認証済みユーザ(閲覧者)の投稿として作成(リクエストされた値をもとに作成)
+        $request->user()->tasks()->create([
+            'content' => $request->content,
+            'status'  => $request->status,
+        ]);
         
         // トップページへリダイレクトさせる
         return redirect('/');
@@ -118,7 +130,7 @@ class TasksController extends Controller
     {
         // バリデーション
         $request->validate([
-            'status' => 'required|max:255',
+            'status' => 'required|max:10',
             'content' => 'required|max:255',
         ]);
 
