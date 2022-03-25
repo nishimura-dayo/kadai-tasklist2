@@ -144,14 +144,15 @@ class TasksController extends Controller
             'content' => 'required|max:255',
         ]);
 
-        // idの値でタスクを検索して取得
+        // idの値でメッセージを検索して取得
         $task = Task::findOrFail($id);
-        
+        // メッセージを更新
+        $task->content = $request->content;
+        $task->status = $request->status;
+        $task->save();
 
-        // タスク編集ビューでそれを表示
-        return view('tasks.edit', [
-            'task' => $task,
-        ]);
+        // トップページへリダイレクトさせる
+        return redirect('/');
     }
 
     /**
